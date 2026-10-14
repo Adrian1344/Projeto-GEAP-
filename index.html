@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f8fc" />
+    <title>GEAP | Atividades</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#" aria-label="GEAP início">
+          <span class="brand-mark">G</span>
+          <span>geap<span class="brand-period">.</span></span>
+        </a>
+
+        <div class="workspace-label">ESPAÇO DE ESTUDO</div>
+        <nav class="main-nav" aria-label="Navegação principal">
+          <a class="nav-link" href="#visao-geral">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
+            Visão geral
+          </a>
+          <a class="nav-link active" href="#atividades" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="3" width="8" height="4" rx="1"/><path d="m9 13 2 2 4-4"/></svg>
+            Atividades
+            <span class="nav-count" id="sidebar-count">0</span>
+          </a>
+          <a class="nav-link" href="#calendario">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
+            Calendário
+          </a>
+          <a class="nav-link" href="#materiais">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+            Materiais
+          </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="help-card">
+            <div class="help-icon">?</div>
+            <strong>Precisa de ajuda?</strong>
+            <p>Estamos aqui para apoiar seu aprendizado.</p>
+            <a href="mailto:suporte@geap.edu.br">Fale com a gente <span aria-hidden="true">↗</span></a>
+          </div>
+          <button class="profile-button" type="button" aria-label="Perfil de Marina Costa">
+            <span class="avatar avatar-purple">MC</span>
+            <span class="profile-copy"><strong>Marina Costa</strong><small>Turma 2º ano B</small></span>
+            <span class="profile-more" aria-hidden="true">···</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-content" id="visao-geral">
+        <header class="topbar">
+          <div class="breadcrumb"><span>Início</span><span class="breadcrumb-slash">/</span><strong>Atividades</strong></div>
+          <div class="topbar-actions">
+            <button class="icon-button notification-button" type="button" aria-label="Notificações">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+              <span class="notification-dot"></span>
+            </button>
+            <span class="topbar-divider"></span>
+            <button class="role-switch" id="role-switch" type="button" aria-pressed="false">
+              <span class="role-switch-icon">↔</span>
+              <span id="role-switch-label">Visualizar como professor</span>
+            </button>
+          </div>
+        </header>
+
+        <section class="page-content" id="atividades">
+          <div class="welcome-row">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span><span id="current-date"></span></div>
+              <h1>Suas atividades<span class="title-period">.</span></h1>
+              <p class="page-subtitle">Acompanhe prazos, entregas e tudo o que você já conquistou.</p>
+            </div>
+            <button class="primary-button" id="new-activity" type="button" hidden>
+              <span aria-hidden="true">＋</span> Nova atividade
+            </button>
+          </div>
+
+          <div class="summary-grid" id="summary-grid" aria-label="Resumo das atividades"></div>
+
+          <section class="activity-section" aria-labelledby="section-title">
+            <div class="section-heading">
+              <div>
+                <h2 id="section-title">Todas as atividades</h2>
+                <p id="results-label">Confira o que precisa da sua atenção.</p>
+              </div>
+              <label class="search-box">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                <input id="search-input" type="search" placeholder="Buscar atividade..." aria-label="Buscar atividade" />
+                <kbd>⌘ K</kbd>
+              </label>
+            </div>
+
+            <div class="filter-row" id="filter-row" role="group" aria-label="Filtrar atividades"></div>
+            <div class="activity-list" id="activity-list" aria-live="polite"></div>
+          </section>
+
+          <footer class="page-footer">
+            <span>© 2024 GEAP Educação</span>
+            <span>Feito para aprender, todos os dias <span class="footer-heart">♥</span></span>
+          </footer>
+        </section>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
