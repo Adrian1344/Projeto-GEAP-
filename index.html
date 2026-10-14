@@ -68,6 +68,8 @@
           </article>
         </section>
 
+        <section class="delivery-overview" id="delivery-overview" aria-label="Resumo geral das entregas"></section>
+
         <section class="activity-section" aria-labelledby="list-heading">
           <div class="section-heading">
             <div><h2 id="list-heading">Todas as atividades</h2><span class="result-count" id="result-count">0 atividades</span></div>
@@ -79,7 +81,7 @@
 
           <div class="table-wrap">
             <table>
-              <thead><tr><th scope="col">ATIVIDADE</th><th scope="col">DISCIPLINA / TURMA</th><th scope="col">PRAZO DE ENTREGA</th><th scope="col">TIPO</th><th scope="col"><span class="visually-hidden">Ações</span></th></tr></thead>
+              <thead><tr><th scope="col">ATIVIDADE</th><th scope="col">DISCIPLINA / TURMA</th><th scope="col">PRAZO DE ENTREGA</th><th scope="col">TIPO</th><th scope="col">ENTREGAS</th><th scope="col"><span class="visually-hidden">Ações</span></th></tr></thead>
               <tbody id="activity-list"></tbody>
             </table>
             <div class="empty-state" id="empty-state" hidden>
@@ -116,6 +118,22 @@
 
       <div class="dialog-actions"><button class="secondary-button" type="button" id="cancel-dialog-button">Cancelar</button><button class="primary-button" id="save-button" type="submit">Salvar atividade</button></div>
     </form>
+  </dialog>
+  <dialog class="activity-dialog delivery-dialog" id="delivery-dialog" aria-labelledby="delivery-title">
+    <div class="delivery-dialog-content">
+      <div class="dialog-topline"><span class="eyebrow"><span class="eyebrow-line"></span> ACOMPANHAMENTO</span><button class="icon-button close-button" type="button" id="close-delivery-dialog" aria-label="Fechar">×</button></div>
+      <h2 id="delivery-title">Entregas da atividade</h2>
+      <p class="dialog-description" id="delivery-description"></p>
+      <div class="delivery-summary" id="delivery-summary" aria-label="Resumo das entregas"></div>
+      <div class="delivery-filters" role="group" aria-label="Filtrar entregas por situação">
+        <button class="delivery-filter is-selected" type="button" data-status-filter="all" aria-pressed="true">Todas</button>
+        <button class="delivery-filter" type="button" data-status-filter="pending" aria-pressed="false">Pendentes</button>
+        <button class="delivery-filter" type="button" data-status-filter="submitted" aria-pressed="false">Entregues</button>
+        <button class="delivery-filter" type="button" data-status-filter="evaluated" aria-pressed="false">Avaliadas</button>
+        <button class="delivery-filter" type="button" data-status-filter="overdue" aria-pressed="false">Atrasadas</button>
+      </div>
+      <div class="delivery-list" id="delivery-list" aria-live="polite"></div>
+    </div>
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
