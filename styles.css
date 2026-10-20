@@ -142,6 +142,44 @@ td { height: 76px; padding: 10px 14px; border-top: 1px solid #eff1ed; color: #69
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; padding-top: 17px; border-top: 1px solid var(--line); }
 .secondary-button { border-color: #dfe5dd; color: #59645c; background: #fff; }
 .secondary-button:hover { background: #f6f8f5; }
+.student-panel { display: block; }
+.student-page-wrap { padding-top: 30px; }
+.student-heading { margin-bottom: 22px; }
+.student-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
+.student-grid { display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(280px, 0.9fr); gap: 18px; }
+.panel-card { border: 1px solid var(--line); border-radius: 5px; background: var(--surface); box-shadow: 0 5px 18px rgb(44 62 47 / 3%); }
+.panel-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid var(--line); }
+.panel-header h2 { margin: 0 0 4px; font-family: 'Playfair Display', Georgia, serif; font-size: 18px; font-weight: 600; }
+.panel-header span { color: var(--muted); font-size: 10px; }
+.student-list { display: grid; gap: 14px; padding: 18px 18px 20px; }
+.student-card { display: grid; gap: 12px; padding: 16px 16px 14px; border: 1px solid var(--line); border-radius: 6px; background: linear-gradient(180deg, #fff 0%, #f7faf7 100%); }
+.student-card.is-complete { background: linear-gradient(180deg, #f4faf5 0%, #edf5ef 100%); }
+.student-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.student-card h3 { margin: 0; font-size: 16px; }
+.student-card p { margin: 0; color: #5d6a63; font-size: 11px; line-height: 1.6; }
+.student-card-meta { display: grid; gap: 6px; color: #4d5b53; font-size: 10px; }
+.student-card-meta strong { font-weight: 700; }
+.student-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 2px; }
+.student-date, .student-status { display: inline-flex; align-items: center; min-height: 27px; padding: 4px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+.student-date { background: #eef3f0; color: #4d5a52; }
+.student-date.is-warning { background: #fff1df; color: #b7652d; }
+.student-date.is-danger { background: #fbe8e4; color: #b75645; }
+.student-status.pending { background: #edf2f8; color: #47677e; }
+.student-status.late { background: #fce9e5; color: #b95243; }
+.student-status.done { background: #eaf6ec; color: #2b6b3c; }
+.student-check-button { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; padding: 0 12px; border: 1px solid var(--green); border-radius: 4px; color: var(--green-dark); background: #edf6ef; font-weight: 700; font-size: 10px; }
+.student-check-button:hover { background: #e5f2e8; }
+.student-notifications { display: grid; gap: 12px; margin: 0; padding: 18px 18px 18px; list-style: none; }
+.notification { display: grid; gap: 5px; padding: 14px 12px; border: 1px solid var(--line); border-radius: 6px; background: #f6f9f7; }
+.notification strong { font-size: 12px; }
+.notification span, .notification small { color: #5e6c64; font-size: 10px; }
+.notification small { font-weight: 700; }
+.notification.is-warning { background: #fff8ef; border-color: #f3dfc2; }
+.notification.is-alert { background: #fff0ee; border-color: #f4d4d1; }
+.notification.is-info { background: #edf5fc; border-color: #dfeaf5; }
+.notification-tag { display: inline-flex; width: fit-content; padding: 3px 7px; border-radius: 999px; background: rgba(49, 99, 75, 0.08); color: var(--green-dark); font-weight: 700; }
+.empty-notification { color: var(--muted); font-size: 12px; }
+.student-empty { padding: 28px 18px; color: var(--muted); text-align: center; }
 .toast { position: fixed; right: 24px; bottom: 22px; z-index: 5; padding: 12px 17px; border-radius: 4px; color: #fff; background: #2d4e3a; box-shadow: 0 8px 28px rgb(20 36 25 / 18%); font-size: 11px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .2s ease, transform .2s ease; }
 .toast.is-visible { opacity: 1; transform: translateY(0); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

@@ -7,13 +7,7 @@ const exampleActivities = [
     subject: 'Ciências',
     className: '8º ano A',
     dueDate: '2026-10-20',
-    type: 'Trabalho',
-    submissions: [
-      { student: 'Alice Ferreira', status: 'submitted' },
-      { student: 'Bruno Lima', status: 'pending' },
-      { student: 'Camila Souza', status: 'evaluated' },
-      { student: 'Diego Martins', status: 'overdue' }
-    ]
+    type: 'Trabalho'
   },
   {
     id: 'sample-2',
@@ -22,12 +16,7 @@ const exampleActivities = [
     subject: 'Matemática',
     className: '9º ano B',
     dueDate: '2026-10-17',
-    type: 'Lista de exercícios',
-    submissions: [
-      { student: 'Felipe Rocha', status: 'submitted' },
-      { student: 'Isabela Alves', status: 'pending' },
-      { student: 'Lucas Mendes', status: 'evaluated' }
-    ]
+    type: 'Lista de exercícios'
   },
   {
     id: 'sample-3',
@@ -36,28 +25,13 @@ const exampleActivities = [
     subject: 'Língua Portuguesa',
     className: '7º ano A',
     dueDate: '2026-10-24',
-    type: 'Leitura',
-    submissions: [
-      { student: 'Amanda Costa', status: 'pending' },
-      { student: 'Gabriel Santos', status: 'submitted' },
-      { student: 'Júlia Ribeiro', status: 'overdue' }
-    ]
+    type: 'Leitura'
   }
 ];
 
-const classRoster = {
-  '7º ano a': ['Amanda Costa', 'Gabriel Santos', 'Júlia Ribeiro'],
-  '8º ano a': ['Alice Ferreira', 'Bruno Lima', 'Camila Souza', 'Diego Martins'],
-  '9º ano b': ['Felipe Rocha', 'Isabela Alves', 'Lucas Mendes']
-};
-const defaultRoster = ['Ana Silva', 'João Santos', 'Maria Oliveira'];
-const deliveryStatuses = {
-  pending: 'Pendente',
-  submitted: 'Entregue',
-  evaluated: 'Avaliada',
-  overdue: 'Atrasada'
-};
-
+const teacherPanel = document.querySelector('.teacher-panel');
+const studentPanel = document.querySelector('.student-panel');
+const navLinks = document.querySelectorAll('.nav-link');
 const activityList = document.querySelector('#activity-list');
 const activityDialog = document.querySelector('#activity-dialog');
 const activityForm = document.querySelector('#activity-form');
@@ -67,6 +41,8 @@ const emptyState = document.querySelector('#empty-state');
 const searchInput = document.querySelector('#search-input');
 const typeFilter = document.querySelector('#type-filter');
 const toast = document.querySelector('#toast');
+const studentActivityList = document.querySelector('#student-activity-list');
+const studentNotifications = document.querySelector('#student-notifications');
 let activities = loadActivities();
 let toastTimer;
 let selectedDeliveryActivity = null;
@@ -79,20 +55,12 @@ function loadActivities() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored !== null) {
       const parsed = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed.map(ensureSubmissions) : [...exampleActivities];
+      return Array.isArray(parsed) ? parsed : [...exampleActivities];
     }
   } catch {
-    return exampleActivities.map((activity) => ({ ...activity, submissions: activity.submissions.map((submission) => ({ ...submission })) }));
+    return [...exampleActivities];
   }
-
-  function ensureSubmissions(activity) {
-    if (!Array.isArray(activity.submissions)) {
-      const roster = classRoster[activity.className.trim().toLocaleLowerCase('pt-BR')] ?? defaultRoster;
-      activity.submissions = roster.map((student) => ({ student, status: 'pending' }));
-    }
-    return activity;
-  }
-  return [...exampleActivities];
+  return exampleActivities.map((activity) => ({ ...activity, completed: Boolean(activity.completed) }));
 }
 
 function saveActivities() {
@@ -103,17 +71,21 @@ function formatDate(dateString) {
   const [year, month, day] = dateString.split('-').map(Number);
   return new Date(year, month - 1, day).toLocaleDateString('pt-BR', {
     day: '2-digit',
-    month: 'short',
+    month: '2-digit',
     year: 'numeric'
-  }).replace('.', '');
+  });
 }
 
-function getDueLabel(dateString) {
+function getDateDiffInDays(dateString) {
   const [year, month, day] = dateString.split('-').map(Number);
   const due = new Date(year, month - 1, day);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const days = Math.round((due - today) / 86400000);
+  return Math.round((due - today) / 86400000);
+}
+
+function getDueLabel(dateString) {
+  const days = getDateDiffInDays(dateString);
   if (days < 0) return 'Prazo encerrado';
   if (days === 0) return 'Entrega hoje';
   if (days === 1) return 'Falta 1 dia';
@@ -130,6 +102,14 @@ function getWeekCount() {
     const due = new Date(year, month - 1, day);
     return due >= start && due < end;
   }).length;
+}
+
+function getTypeBadgeClass(type) {
+  return `type-${String(type)
+    .toLocaleLowerCase('pt-BR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replaceAll(' ', '-')}`;
 }
 
 function makeCell(className, content, isHtml = false) {
@@ -201,7 +181,7 @@ function renderActivities() {
 
     const typeCell = document.createElement('td');
     const badge = document.createElement('span');
-    badge.className = `type-badge type-${activity.type.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replaceAll(' ', '-')}`;
+    badge.className = `type-badge ${getTypeBadgeClass(activity.type)}`;
     badge.textContent = activity.type;
     typeCell.append(badge);
     row.append(typeCell);
@@ -375,6 +355,83 @@ function openDeliveryDialog(activity) {
   deliveryDialog.showModal();
 }
 
+function renderStudentView() {
+  const pending = activities.filter((activity) => !activity.completed).sort((first, second) => first.dueDate.localeCompare(second.dueDate));
+  const completed = activities.filter((activity) => activity.completed).sort((first, second) => first.dueDate.localeCompare(second.dueDate));
+  const dueSoon = pending.filter((activity) => {
+    const days = getDateDiffInDays(activity.dueDate);
+    return days >= 0 && days <= 3;
+  }).length;
+
+  document.querySelector('#student-pending-count').textContent = pending.length;
+  document.querySelector('#student-near-count').textContent = dueSoon;
+  document.querySelector('#student-completed-count').textContent = completed.length;
+  document.querySelector('#student-list-count').textContent = `${activities.length} ${activities.length === 1 ? 'entrega' : 'entregas'}`;
+
+  if (studentActivityList) {
+    if (activities.length === 0) {
+      studentActivityList.innerHTML = '<div class="student-empty">Nenhuma atividade cadastrada no momento.</div>';
+    } else {
+      studentActivityList.innerHTML = [...activities].sort((first, second) => first.dueDate.localeCompare(second.dueDate)).map((activity) => {
+        const dueLabel = getDueLabel(activity.dueDate);
+        const isLate = dueLabel === 'Prazo encerrado';
+        const isWarning = dueLabel === 'Entrega hoje' || dueLabel === 'Falta 1 dia' || dueLabel.startsWith('Faltam');
+        const statusText = activity.completed ? 'Concluída' : isLate ? 'Atrasada' : dueLabel;
+
+        return `
+          <article class="student-card ${activity.completed ? 'is-complete' : ''}">
+            <div class="student-card-header">
+              <span class="type-badge ${getTypeBadgeClass(activity.type)}">${escapeHtml(activity.type)}</span>
+              <button class="student-check-button" type="button" data-action="toggle-done" data-id="${activity.id}" aria-label="${activity.completed ? 'Desmarcar atividade' : 'Marcar atividade como feita'}">
+                ${activity.completed ? '✓ Feita' : 'Marcar como feita'}
+              </button>
+            </div>
+            <h3>${escapeHtml(activity.title)}</h3>
+            <p>${escapeHtml(activity.description)}</p>
+            <div class="student-card-meta">
+              <span><strong>Disciplina:</strong> ${escapeHtml(activity.subject)}</span>
+              <span><strong>Turma:</strong> ${escapeHtml(activity.className)}</span>
+            </div>
+            <div class="student-footer">
+              <span class="student-date ${isLate ? 'is-danger' : isWarning ? 'is-warning' : ''}">${formatDate(activity.dueDate)}</span>
+              <span class="student-status ${activity.completed ? 'done' : isLate ? 'late' : 'pending'}">${statusText}</span>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+  }
+
+  const notifications = activities
+    .filter((activity) => !activity.completed)
+    .map((activity) => ({
+      ...activity,
+      daysLeft: getDateDiffInDays(activity.dueDate)
+    }))
+    .filter((activity) => activity.daysLeft <= 3)
+    .sort((first, second) => first.daysLeft - second.daysLeft);
+
+  if (studentNotifications) {
+    if (notifications.length === 0) {
+      studentNotifications.innerHTML = '<li class="notification empty-notification">Nenhuma pendência por agora. Você está em dia.</li>';
+      return;
+    }
+
+    studentNotifications.innerHTML = notifications.slice(0, 4).map((activity) => {
+      const dueLabel = getDueLabel(activity.dueDate);
+      const tone = activity.daysLeft < 0 ? 'is-alert' : activity.daysLeft <= 1 ? 'is-warning' : 'is-info';
+      return `
+        <li class="notification ${tone}">
+          <span class="notification-tag">${escapeHtml(activity.type)}</span>
+          <strong>${escapeHtml(activity.title)}</strong>
+          <span>${escapeHtml(activity.subject)} • ${formatDate(activity.dueDate)}</span>
+          <small>${dueLabel}</small>
+        </li>
+      `;
+    }).join('');
+  }
+}
+
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (character) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -405,6 +462,18 @@ function showToast(message) {
   toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
 }
 
+function showView(view) {
+  const isTeacherView = view === 'teacher';
+  teacherPanel.hidden = !isTeacherView;
+  studentPanel.hidden = isTeacherView;
+  navLinks.forEach((link) => {
+    const shouldActivate = link.dataset.view === view;
+    link.classList.toggle('is-active', shouldActivate);
+    link.setAttribute('aria-current', shouldActivate ? 'page' : 'false');
+    link.style.pointerEvents = shouldActivate ? 'none' : 'auto';
+  });
+}
+
 document.querySelector('#new-activity-button').addEventListener('click', () => openForm());
 document.querySelector('#empty-create-button').addEventListener('click', () => openForm());
 document.querySelector('#close-dialog-button').addEventListener('click', () => activityDialog.close());
@@ -424,11 +493,11 @@ activityForm.addEventListener('submit', (event) => {
     subject: formData.get('subject').trim(),
     className: formData.get('className').trim(),
     dueDate: formData.get('dueDate'),
-    type: formData.get('type')
+    type: formData.get('type'),
+    completed: false
   };
   const existingIndex = activities.findIndex((item) => item.id === id);
   if (existingIndex >= 0) {
-    activity.submissions = activities[existingIndex].submissions;
     activities[existingIndex] = activity;
     showToast('Atividade atualizada.');
   } else {
@@ -439,6 +508,7 @@ activityForm.addEventListener('submit', (event) => {
   }
   saveActivities();
   renderActivities();
+  renderStudentView();
   activityDialog.close();
 });
 
@@ -459,6 +529,7 @@ activityList.addEventListener('click', (event) => {
     activities = activities.filter((item) => item.id !== activity.id);
     saveActivities();
     renderActivities();
+    renderStudentView();
     showToast('Atividade excluída.');
   }
 });
@@ -483,56 +554,8 @@ deliveryList.addEventListener('change', (event) => {
   showToast(`Situação de ${submission.student} atualizada.`);
 });
 
-document.querySelectorAll('.side-nav .nav-link').forEach((link) => {
-  link.addEventListener('click', () => setActivePage(link.hash));
-});
-window.addEventListener('hashchange', () => setActivePage(window.location.hash));
-
-function setActivePage(hash) {
-  const isEvaluationsPage = hash === '#avaliacoes';
-  document.querySelector('#activities-page').hidden = isEvaluationsPage;
-  document.querySelector('#evaluations-page').hidden = !isEvaluationsPage;
-  document.querySelector('#breadcrumb-page').textContent = isEvaluationsPage ? 'Avaliações' : 'Atividades';
-  document.querySelectorAll('.side-nav .nav-link').forEach((link) => {
-    const isActive = link.hash === (isEvaluationsPage ? '#avaliacoes' : '#atividades');
-    link.classList.toggle('is-active', isActive);
-    if (isActive) link.setAttribute('aria-current', 'page');
-    else link.removeAttribute('aria-current');
-  });
-  if (isEvaluationsPage) renderEvaluationPage();
-}
-
-document.querySelector('#evaluation-activity').addEventListener('change', (event) => {
-  selectedEvaluationActivityId = event.target.value;
-  selectedEvaluationStudentIndex = null;
-  renderEvaluationPage();
-});
-
-document.querySelector('#evaluation-roster').addEventListener('click', (event) => {
-  const studentButton = event.target.closest('[data-evaluation-student]');
-  if (!studentButton) return;
-  selectedEvaluationStudentIndex = Number(studentButton.dataset.evaluationStudent);
-  renderEvaluationPage();
-});
-
-document.querySelector('#evaluation-form').addEventListener('submit', (event) => {
-  event.preventDefault();
-  const form = event.currentTarget;
-  if (!form.reportValidity()) return;
-  const activity = activities.find(({ id }) => id === selectedEvaluationActivityId);
-  const submission = activity?.submissions[selectedEvaluationStudentIndex];
-  if (!submission) return;
-
-  submission.grade = Number(document.querySelector('#evaluation-grade').value);
-  submission.comment = document.querySelector('#evaluation-comment').value.trim();
-  submission.status = 'evaluated';
-  saveActivities();
-  renderActivities();
-  showToast(`Avaliação de ${submission.student} salva.`);
-});
-
 document.querySelector('#today-label').textContent = new Intl.DateTimeFormat('pt-BR', {
   weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'
 }).format(new Date()).replace('.', '');
-setActivePage(window.location.hash);
 renderActivities();
+renderStudentView();
