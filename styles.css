@@ -194,10 +194,13 @@ td { height: 76px; padding: 10px 14px; border-top: 1px solid #eff1ed; color: #69
   th, td { padding-right: 10px; padding-left: 10px; }
 }
 @media (max-width: 760px) {
-  .sidebar { position: static; width: 100%; height: 58px; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 18px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .sidebar { position: static; width: 100%; min-height: 58px; flex-direction: row; align-items: center; justify-content: space-between; gap: 5px; padding: 7px 12px; border-right: 0; border-bottom: 1px solid var(--line); }
   .brand { margin: 0; font-size: 22px; }
   .brand-mark { width: 24px; height: 24px; }
-  .side-label, .side-nav, .sidebar-bottom { display: none; }
+  .side-label, .sidebar-bottom { display: none; }
+  .side-nav { display: flex; gap: 2px; }
+  .nav-link { min-height: 36px; gap: 5px; padding: 0 6px; font-size: 10px; }
+  .nav-icon { width: 16px; font-size: 15px; }
   .main-content { margin-left: 0; }
   .topbar { height: 52px; padding: 0 20px; }
   .today-label { display: none; }
@@ -311,4 +314,52 @@ td { height: 76px; padding: 10px 14px; border-top: 1px solid #eff1ed; color: #69
   .delivery-row { grid-template-columns: 30px minmax(0, 1fr); }
   .delivery-row .status-badge { grid-column: 2; grid-row: 2; justify-self: start; }
   .delivery-status-select { grid-column: 2; }
+}
+
+.evaluation-workspace { display: grid; grid-template-columns: minmax(260px, .88fr) minmax(0, 1.12fr); gap: 16px; align-items: start; }
+.evaluation-roster-panel, .evaluation-form { min-width: 0; border: 1px solid #e5e9e3; border-radius: 5px; background: #fff; box-shadow: 0 5px 18px rgb(44 62 47 / 3%); }
+.evaluation-panel-heading { min-height: 69px; padding: 17px 19px 13px; border-bottom: 1px solid var(--line); }
+.evaluation-panel-heading h2, .evaluation-form-heading h2 { margin: 0 0 5px; font-family: 'Playfair Display', Georgia, serif; font-size: 16px; font-weight: 600; }
+.evaluation-activity-field { margin: 15px 16px 12px; }
+.evaluation-activity-field select { min-height: 39px; }
+.evaluation-roster { max-height: 475px; overflow-y: auto; padding: 0 16px 13px; }
+.evaluation-student { display: flex; width: 100%; min-height: 59px; align-items: center; gap: 10px; padding: 8px 9px; border: 1px solid transparent; border-bottom-color: #eff1ed; border-radius: 4px; text-align: left; background: #fff; transition: background .16s ease, border-color .16s ease; }
+.evaluation-student:hover { background: #f8faf7; }
+.evaluation-student.is-selected { border-color: #dce8dc; background: #f2f7f0; }
+.evaluation-student-details { display: grid; flex: 1; gap: 4px; min-width: 0; }
+.evaluation-student-details strong { overflow: hidden; color: #465148; font-size: 10px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.evaluation-student-details > span { color: #929b94; font-size: 9px; }
+.evaluation-grade-badge { padding: 5px 7px; border-radius: 4px; color: var(--green-dark); background: #e7f0e5; font-size: 11px; font-weight: 700; }
+.evaluation-grade-badge small { margin-left: 1px; color: #7b897d; font-size: 8px; font-weight: 500; }
+.evaluation-chevron { color: #98a29a; font-size: 18px; }
+.evaluation-empty { padding: 20px 10px; color: #89938b; text-align: center; font-size: 10px; line-height: 1.6; }
+.evaluation-form { padding: 22px 24px 20px; }
+.evaluation-form-heading { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.evaluation-form-heading h2 { margin: 5px 0 0; font-size: 20px; }
+.evaluation-form-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 5px; color: var(--green); background: var(--green-pale); font-size: 18px; }
+.evaluation-form-heading .eyebrow { font-size: 8px; }
+.evaluation-context { min-height: 31px; margin: 13px 0 18px; color: #869088; font-size: 10px; line-height: 1.5; }
+.evaluation-form .form-field { margin-bottom: 16px; }
+.grade-input-wrap { position: relative; display: flex; width: 145px; align-items: center; }
+.grade-input-wrap input { padding-right: 45px; font-size: 16px; font-weight: 600; }
+.grade-input-wrap > span { position: absolute; right: 10px; color: #939d95; font-size: 9px; font-weight: 400; }
+.evaluation-form .form-field textarea { min-height: 128px; }
+.evaluation-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 15px; border-top: 1px solid var(--line); }
+.evaluation-save-status { color: #929b94; font-size: 9px; line-height: 1.4; }
+.evaluation-form .primary-button:disabled { cursor: not-allowed; opacity: .5; transform: none; }
+.evaluation-footer { margin-top: 15px; }
+
+@media (max-width: 900px) {
+  .evaluation-workspace { grid-template-columns: minmax(220px, .8fr) minmax(0, 1.2fr); gap: 11px; }
+  .evaluation-form { padding: 19px 18px; }
+}
+@media (max-width: 760px) {
+  .evaluation-workspace { grid-template-columns: 1fr; }
+  .evaluation-roster { max-height: 265px; }
+}
+@media (max-width: 480px) {
+  .evaluation-panel-heading { padding-right: 14px; padding-left: 14px; }
+  .evaluation-form { padding: 18px 15px; }
+  .evaluation-form-footer { align-items: flex-start; flex-direction: column; }
+  .evaluation-form-footer .primary-button { align-self: stretch; }
 }

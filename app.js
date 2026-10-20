@@ -47,6 +47,8 @@ let activities = loadActivities();
 let toastTimer;
 let selectedDeliveryActivity = null;
 let selectedDeliveryStatus = 'all';
+let selectedEvaluationActivityId = activities[0]?.id ?? '';
+let selectedEvaluationStudentIndex = null;
 
 function loadActivities() {
   try {
@@ -226,6 +228,7 @@ function renderActivities() {
     : 'Tente ajustar sua busca ou o filtro de tipo.';
   document.querySelector('#empty-create-button').hidden = activities.length > 0;
   renderDeliveryOverview();
+  renderEvaluationPage();
 }
 
 function renderDeliveryDialog() {
@@ -264,6 +267,85 @@ function renderDeliveryDialog() {
       </div>
     `).join('')
     : '<p class="delivery-empty">Nenhum aluno nesta situação.</p>';
+}
+
+function renderEvaluationPage() {
+  const activitySelect = document.querySelector('#evaluation-activity');
+  const previousActivityId = selectedEvaluationActivityId;
+  activitySelect.innerHTML = activities.length
+    ? activities.map(({ id, title, className }) => `<option value="${escapeHtml(id)}">${escapeHtml(title)} · ${escapeHtml(className)}</option>`).join('')
+    : '<option value="">Nenhuma atividade cadastrada</option>';
+
+  const selectedActivity = activities.find(({ id }) => id === previousActivityId) ?? activities[0];
+  selectedEvaluationActivityId = selectedActivity?.id ?? '';
+  if (selectedActivity) activitySelect.value = selectedActivity.id;
+  activitySelect.disabled = !selectedActivity;
+
+  const roster = document.querySelector('#evaluation-roster');
+  const gradeInput = document.querySelector('#evaluation-grade');
+  const commentInput = document.querySelector('#evaluation-comment');
+  const saveButton = document.querySelector('#save-evaluation-button');
+  const studentTitle = document.querySelector('#evaluation-student-title');
+  const context = document.querySelector('#evaluation-context');
+  const saveStatus = document.querySelector('#evaluation-save-status');
+
+  if (!selectedActivity) {
+    selectedEvaluationStudentIndex = null;
+    document.querySelector('#evaluation-roster-count').textContent = '0 alunos';
+    roster.innerHTML = '<p class="evaluation-empty">Cadastre uma atividade para começar a avaliar os alunos.</p>';
+    studentTitle.textContent = 'Selecione um aluno';
+    context.textContent = 'Escolha um aluno da lista para registrar a avaliação.';
+    gradeInput.value = '';
+    commentInput.value = '';
+    gradeInput.disabled = true;
+    commentInput.disabled = true;
+    saveButton.disabled = true;
+    saveStatus.textContent = 'As alterações ficam salvas neste dispositivo.';
+    return;
+  }
+
+  const submissions = selectedActivity.submissions;
+  document.querySelector('#evaluation-roster-count').textContent = `${submissions.length} ${submissions.length === 1 ? 'aluno' : 'alunos'}`;
+  if (selectedEvaluationStudentIndex === null || !submissions[selectedEvaluationStudentIndex]) {
+    selectedEvaluationStudentIndex = submissions.length ? 0 : null;
+  }
+
+  roster.innerHTML = submissions.length
+    ? submissions.map((submission, index) => {
+      const hasEvaluation = typeof submission.grade === 'number';
+      const status = hasEvaluation ? 'Avaliada' : 'Aguardando avaliação';
+      const isSelected = index === selectedEvaluationStudentIndex;
+      return `
+        <button class="evaluation-student${isSelected ? ' is-selected' : ''}" type="button" data-evaluation-student="${index}" aria-pressed="${isSelected}">
+          <span class="student-avatar" aria-hidden="true">${escapeHtml(submission.student.split(' ').map((part) => part[0]).slice(0, 2).join(''))}</span>
+          <span class="evaluation-student-details"><strong>${escapeHtml(submission.student)}</strong><span>${status}</span></span>
+          ${hasEvaluation ? `<span class="evaluation-grade-badge">${submission.grade.toLocaleString('pt-BR')}<small>/10</small></span>` : '<span class="evaluation-chevron" aria-hidden="true">›</span>'}
+        </button>
+      `;
+    }).join('')
+    : '<p class="evaluation-empty">Esta atividade ainda não tem alunos vinculados.</p>';
+
+  const selectedSubmission = submissions[selectedEvaluationStudentIndex];
+  if (!selectedSubmission) {
+    studentTitle.textContent = 'Nenhum aluno disponível';
+    context.textContent = 'Adicione alunos à turma para registrar avaliações.';
+    gradeInput.value = '';
+    commentInput.value = '';
+    gradeInput.disabled = true;
+    commentInput.disabled = true;
+    saveButton.disabled = true;
+    saveStatus.textContent = 'As alterações ficam salvas neste dispositivo.';
+    return;
+  }
+
+  studentTitle.textContent = selectedSubmission.student;
+  context.textContent = `${selectedActivity.subject} · ${selectedActivity.className} · ${selectedActivity.title}`;
+  gradeInput.value = typeof selectedSubmission.grade === 'number' ? selectedSubmission.grade : '';
+  commentInput.value = selectedSubmission.comment ?? '';
+  gradeInput.disabled = false;
+  commentInput.disabled = false;
+  saveButton.disabled = false;
+  saveStatus.textContent = typeof selectedSubmission.grade === 'number' ? 'Avaliação salva anteriormente.' : 'Preencha a nota e registre uma devolutiva.';
 }
 
 function openDeliveryDialog(activity) {
@@ -452,14 +534,28 @@ activityList.addEventListener('click', (event) => {
   }
 });
 
-document.querySelector('#today-label').textContent = new Intl.DateTimeFormat('pt-BR', {
-  weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
-}).format(new Date());
-document.querySelector('#student-today-label').textContent = new Intl.DateTimeFormat('pt-BR', {
-  weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
-}).format(new Date());
+document.querySelector('#close-delivery-dialog').addEventListener('click', () => deliveryDialog.close());
+document.querySelector('.delivery-filters').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-status-filter]');
+  if (!button) return;
+  selectedDeliveryStatus = button.dataset.statusFilter;
+  renderDeliveryDialog();
+});
 
-const initialView = window.location.hash === '#aluno' ? 'student' : 'teacher';
-showView(initialView);
+deliveryList.addEventListener('change', (event) => {
+  const select = event.target.closest('[data-submission-index]');
+  if (!select || !selectedDeliveryActivity) return;
+  const submission = selectedDeliveryActivity.submissions[Number(select.dataset.submissionIndex)];
+  if (!submission) return;
+  submission.status = select.value;
+  saveActivities();
+  renderActivities();
+  renderDeliveryDialog();
+  showToast(`Situação de ${submission.student} atualizada.`);
+});
+
+document.querySelector('#today-label').textContent = new Intl.DateTimeFormat('pt-BR', {
+  weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'
+}).format(new Date()).replace('.', '');
 renderActivities();
 renderStudentView();
