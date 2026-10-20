@@ -7,8 +7,7 @@ const exampleActivities = [
     subject: 'Ciências',
     className: '8º ano A',
     dueDate: '2026-10-20',
-    type: 'Trabalho',
-    completed: false
+    type: 'Trabalho'
   },
   {
     id: 'sample-2',
@@ -17,8 +16,7 @@ const exampleActivities = [
     subject: 'Matemática',
     className: '9º ano B',
     dueDate: '2026-10-17',
-    type: 'Lista de exercícios',
-    completed: false
+    type: 'Lista de exercícios'
   },
   {
     id: 'sample-3',
@@ -27,8 +25,7 @@ const exampleActivities = [
     subject: 'Língua Portuguesa',
     className: '7º ano A',
     dueDate: '2026-10-24',
-    type: 'Leitura',
-    completed: false
+    type: 'Leitura'
   }
 ];
 
@@ -38,6 +35,8 @@ const navLinks = document.querySelectorAll('.nav-link');
 const activityList = document.querySelector('#activity-list');
 const activityDialog = document.querySelector('#activity-dialog');
 const activityForm = document.querySelector('#activity-form');
+const deliveryDialog = document.querySelector('#delivery-dialog');
+const deliveryList = document.querySelector('#delivery-list');
 const emptyState = document.querySelector('#empty-state');
 const searchInput = document.querySelector('#search-input');
 const typeFilter = document.querySelector('#type-filter');
@@ -46,21 +45,18 @@ const studentActivityList = document.querySelector('#student-activity-list');
 const studentNotifications = document.querySelector('#student-notifications');
 let activities = loadActivities();
 let toastTimer;
+let selectedDeliveryActivity = null;
+let selectedDeliveryStatus = 'all';
 
 function loadActivities() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored !== null) {
       const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        return parsed.map((activity) => ({
-          ...activity,
-          completed: Boolean(activity.completed)
-        }));
-      }
+      return Array.isArray(parsed) ? parsed : [...exampleActivities];
     }
   } catch {
-    return exampleActivities.map((activity) => ({ ...activity, completed: Boolean(activity.completed) }));
+    return [...exampleActivities];
   }
   return exampleActivities.map((activity) => ({ ...activity, completed: Boolean(activity.completed) }));
 }
@@ -122,6 +118,34 @@ function makeCell(className, content, isHtml = false) {
   return cell;
 }
 
+function getSubmissionStatus(activity, submission) {
+  if (submission.status !== 'pending') return submission.status;
+  const [year, month, day] = activity.dueDate.split('-').map(Number);
+  const dueDate = new Date(year, month - 1, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return dueDate < today ? 'overdue' : 'pending';
+}
+
+function renderDeliveryOverview() {
+  const counts = Object.fromEntries(Object.keys(deliveryStatuses).map((status) => [status, 0]));
+  activities.forEach((activity) => {
+    activity.submissions.forEach((submission) => {
+      counts[getSubmissionStatus(activity, submission)] += 1;
+    });
+  });
+
+  const overview = document.querySelector('#delivery-overview');
+  overview.innerHTML = `
+    <div class="delivery-overview-heading"><strong>Situação das entregas</strong><span>Em todas as turmas</span></div>
+    <div class="delivery-overview-items">
+      ${Object.entries(deliveryStatuses).map(([status, label]) => `
+        <span class="overview-status status-${status}"><i aria-hidden="true"></i>${label}<strong>${counts[status]}</strong></span>
+      `).join('')}
+    </div>
+  `;
+}
+
 function renderActivities() {
   const query = searchInput.value.trim().toLocaleLowerCase('pt-BR');
   const selectedType = typeFilter.value;
@@ -160,6 +184,27 @@ function renderActivities() {
     typeCell.append(badge);
     row.append(typeCell);
 
+    const statusCounts = Object.fromEntries(Object.keys(deliveryStatuses).map((status) => [status, 0]));
+    activity.submissions.forEach((submission) => {
+      statusCounts[getSubmissionStatus(activity, submission)] += 1;
+    });
+    const submissionCell = document.createElement('td');
+    const submissionSummary = document.createElement('div');
+    submissionSummary.className = 'submission-summary';
+    submissionSummary.innerHTML = `
+      <span class="submission-count">${activity.submissions.length} alunos</span>
+      <span class="submission-breakdown">${statusCounts.submitted} entregues · ${statusCounts.pending + statusCounts.overdue} pendentes</span>
+    `;
+    const trackButton = document.createElement('button');
+    trackButton.className = 'track-button';
+    trackButton.type = 'button';
+    trackButton.dataset.action = 'deliveries';
+    trackButton.setAttribute('aria-label', `Acompanhar entregas de ${activity.title}`);
+    trackButton.textContent = 'Acompanhar';
+    submissionSummary.append(trackButton);
+    submissionCell.append(submissionSummary);
+    row.append(submissionCell);
+
     const actionsCell = document.createElement('td');
     const actions = document.createElement('div');
     actions.className = 'row-actions';
@@ -180,6 +225,52 @@ function renderActivities() {
     ? 'Crie sua primeira atividade para começar a organizar as entregas da turma.'
     : 'Tente ajustar sua busca ou o filtro de tipo.';
   document.querySelector('#empty-create-button').hidden = activities.length > 0;
+  renderDeliveryOverview();
+}
+
+function renderDeliveryDialog() {
+  if (!selectedDeliveryActivity) return;
+  const activity = selectedDeliveryActivity;
+  document.querySelector('#delivery-title').textContent = activity.title;
+  document.querySelector('#delivery-description').textContent = `${activity.subject} · ${activity.className} · Prazo: ${formatDate(activity.dueDate)}`;
+
+  const counts = Object.fromEntries(Object.keys(deliveryStatuses).map((status) => [status, 0]));
+  activity.submissions.forEach((submission) => {
+    counts[getSubmissionStatus(activity, submission)] += 1;
+  });
+  document.querySelector('#delivery-summary').innerHTML = Object.entries(deliveryStatuses).map(([status, label]) => `
+    <div class="delivery-stat status-${status}"><span>${label}</span><strong>${counts[status]}</strong></div>
+  `).join('');
+
+  document.querySelectorAll('[data-status-filter]').forEach((button) => {
+    const selected = button.dataset.statusFilter === selectedDeliveryStatus;
+    button.classList.toggle('is-selected', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+
+  const visibleSubmissions = activity.submissions
+    .map((submission, index) => ({ ...submission, index, effectiveStatus: getSubmissionStatus(activity, submission) }))
+    .filter(({ effectiveStatus }) => selectedDeliveryStatus === 'all' || effectiveStatus === selectedDeliveryStatus);
+  deliveryList.innerHTML = visibleSubmissions.length
+    ? visibleSubmissions.map(({ student, index, effectiveStatus }) => `
+      <div class="delivery-row">
+        <span class="student-avatar" aria-hidden="true">${escapeHtml(student.split(' ').map((part) => part[0]).slice(0, 2).join(''))}</span>
+        <span class="student-name">${escapeHtml(student)}</span>
+        <span class="status-badge status-${effectiveStatus}">${deliveryStatuses[effectiveStatus]}</span>
+        <label class="visually-hidden" for="delivery-status-${index}">Situação de ${escapeHtml(student)}</label>
+        <select class="delivery-status-select" id="delivery-status-${index}" data-submission-index="${index}" aria-label="Situação de ${escapeHtml(student)}">
+          ${Object.entries(deliveryStatuses).map(([status, label]) => `<option value="${status}" ${status === effectiveStatus ? 'selected' : ''}>${label}</option>`).join('')}
+        </select>
+      </div>
+    `).join('')
+    : '<p class="delivery-empty">Nenhum aluno nesta situação.</p>';
+}
+
+function openDeliveryDialog(activity) {
+  selectedDeliveryActivity = activity;
+  selectedDeliveryStatus = 'all';
+  renderDeliveryDialog();
+  deliveryDialog.showModal();
 }
 
 function renderStudentView() {
@@ -325,9 +416,11 @@ activityForm.addEventListener('submit', (event) => {
   };
   const existingIndex = activities.findIndex((item) => item.id === id);
   if (existingIndex >= 0) {
-    activities[existingIndex] = { ...activities[existingIndex], ...activity };
+    activities[existingIndex] = activity;
     showToast('Atividade atualizada.');
   } else {
+    const roster = classRoster[activity.className.trim().toLocaleLowerCase('pt-BR')] ?? defaultRoster;
+    activity.submissions = roster.map((student) => ({ student, status: 'pending' }));
     activities.push(activity);
     showToast('Atividade criada.');
   }
@@ -342,6 +435,10 @@ activityList.addEventListener('click', (event) => {
   if (!button) return;
   const row = button.closest('tr');
   const activity = activities.find((item) => item.id === row.dataset.id);
+  if (button.dataset.action === 'deliveries') {
+    openDeliveryDialog(activity);
+    return;
+  }
   if (button.dataset.action === 'edit') {
     openForm(activity);
     return;
@@ -353,27 +450,6 @@ activityList.addEventListener('click', (event) => {
     renderStudentView();
     showToast('Atividade excluída.');
   }
-});
-
-studentActivityList.addEventListener('click', (event) => {
-  const button = event.target.closest('button[data-action="toggle-done"]');
-  if (!button) return;
-  const activity = activities.find((item) => item.id === button.dataset.id);
-  if (!activity) return;
-  activity.completed = !activity.completed;
-  saveActivities();
-  renderActivities();
-  renderStudentView();
-  showToast(activity.completed ? 'Atividade marcada como concluída.' : 'Atividade reaberta.');
-});
-
-navLinks.forEach((link) => {
-  link.addEventListener('click', (event) => {
-    event.preventDefault();
-    const nextView = link.dataset.view;
-    showView(nextView);
-    window.location.hash = nextView === 'student' ? '#aluno' : '#atividades';
-  });
 });
 
 document.querySelector('#today-label').textContent = new Intl.DateTimeFormat('pt-BR', {
